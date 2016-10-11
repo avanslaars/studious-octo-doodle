@@ -1,59 +1,81 @@
-import React, { Component } from 'react';
+import React, { Component  } from 'react';
 import logo from './logo.svg';
 import './App.css';
 
-const OverlySimplifiedRouter = InnerComp => class extends Component {
+const getPath = () => document.location.pathname.substring(document.location.pathname.lastIndexOf('/'))
+
+class Router extends Component {
     constructor() {
         super()
-
         window.onpopstate = (evt) => {
             this.setState({
-              filterFlag: this.getFlagFromPath(document.location.pathname)
+              route: getPath()
             })
         }
+        this.state = {
+            route: getPath()
+        }
 
-        this.gotoRoute = this.gotoRoute.bind(this)
-        this.getFlagFromPath = this.getFlagFromPath.bind(this)
-    }
-    componentWillMount() {
-        const filterFlag = this.getFlagFromPath(document.location.pathname)
-        this.setState({filterFlag})
+        this.handleClick = this.handleClick.bind(this)
     }
 
-    getFlagFromPath (path) {
-        return path.substring(path.lastIndexOf('/')+1) || 'all'
+    static childContextTypes = {
+        clickHandler: React.PropTypes.func
     }
 
-    gotoRoute (evt, route) {
-        evt.preventDefault()
+    handleClick(route) {
+        this.setState({route})
         history.pushState(null, null, route)
-        this.setState({filterFlag: this.getFlagFromPath(route)})
+    }
+
+    getChildContext() {
+        return {
+            clickHandler: this.handleClick
+        }
     }
 
     render() {
         return (
             <div>
-                <h1>Sample Router</h1>
-                <InnerComp go={this.gotoRoute} {...this.state} {...this.props} />
+                {this.props.children}
             </div>
         )
     }
 }
 
-const DumbComponent = (props) => {
-    return (
-        <div>
-            <h2>Dumb Component...{props.filterFlag}</h2>
-            <a href="#" onClick={evt => props.go(evt, '/')}>all</a> |
-            <a href="#" onClick={evt => props.go(evt, '/complete')}>complete</a> |
-            <a href="#" onClick={evt => props.go(evt, '/active')}>active</a>
-        </div>
-    )
+class Match extends Component {
+    render() {
+        return this.props.pattern === getPath() ? <this.props.component /> : null
+    }
 }
 
-const RoutedComp = OverlySimplifiedRouter(DumbComponent)
+class Link extends Component {
+    static contextTypes = {
+        clickHandler: React.PropTypes.func
+    }
+
+    constructor() {
+        super()
+        this.handleClick = this.handleClick.bind(this)
+    }
+
+    handleClick(evt) {
+        evt.preventDefault()
+        this.context.clickHandler(this.props.to)
+    }
+
+    render() {
+        return <a href="#" onClick={this.handleClick}>{this.props.children}</a>
+    }
+}
+
+const One = () => <h1>One</h1>
+const Two = () => <h2>Two</h2>
+const Three = () => <h3>Three</h3>
+
 
 class App extends Component {
+
   render() {
     return (
       <div className="App">
@@ -61,7 +83,15 @@ class App extends Component {
           <img src={logo} className="App-logo" alt="logo" />
           <h2>Welcome to React</h2>
         </div>
-        <RoutedComp test="Whatever"/>
+        <Router>
+            <Link to="/">One</Link>
+            <Link to="/two">Two</Link>
+            <Link to="/three">Three</Link>
+
+            <Match pattern="/" component={One}/>
+            <Match pattern="/two" component={Two}/>
+            <Match pattern="/three" component={Three}/>
+        </Router>
       </div>
     );
   }
