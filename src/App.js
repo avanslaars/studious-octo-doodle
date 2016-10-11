@@ -20,6 +20,7 @@ class Router extends Component {
     }
 
     static childContextTypes = {
+        route: React.PropTypes.string,
         clickHandler: React.PropTypes.func
     }
 
@@ -30,6 +31,7 @@ class Router extends Component {
 
     getChildContext() {
         return {
+            route: this.state.route,
             clickHandler: this.handleClick
         }
     }
@@ -44,8 +46,11 @@ class Router extends Component {
 }
 
 class Match extends Component {
+    static contextTypes = {
+        route: React.PropTypes.string
+    }
     render() {
-        return this.props.pattern === getPath() ? <this.props.component /> : null
+        return this.props.pattern === this.context.route ? <this.props.component route={this.context.route} /> : null
     }
 }
 
@@ -69,9 +74,9 @@ class Link extends Component {
     }
 }
 
-const One = () => <h1>One</h1>
-const Two = () => <h2>Two</h2>
-const Three = () => <h3>Three</h3>
+const One = (props) => <h1>One {props.route}</h1>
+const Two = (props) => <h2>Two {props.route}</h2>
+const Three = (props) => <h3>Three {props.route}</h3>
 
 
 class App extends Component {
@@ -84,13 +89,17 @@ class App extends Component {
           <h2>Welcome to React</h2>
         </div>
         <Router>
-            <Link to="/">One</Link>
-            <Link to="/two">Two</Link>
-            <Link to="/three">Three</Link>
+            <Link to="/">One</Link> |
+            <Link to="/two">Two</Link> |
+            <Link to="/three">Three</Link> |
+            <Link to="/four">Three again with a different value</Link> |
+            <Link to="/five">Three again with yet another value</Link>
 
             <Match pattern="/" component={One}/>
             <Match pattern="/two" component={Two}/>
             <Match pattern="/three" component={Three}/>
+            <Match pattern="/four" component={Three}/>
+            <Match pattern="/five" component={Three}/>
         </Router>
       </div>
     );
